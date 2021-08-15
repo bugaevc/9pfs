@@ -1,0 +1,4 @@
+*.o
+9pfs
+*Server.c
+*_S.h

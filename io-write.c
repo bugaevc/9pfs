@@ -1,0 +1,70 @@
+/* 9P translator
+
+   Copyright (C) 2021 Sergey Bugaev <bugaevc@gmail.com>
+
+   This program is free software: you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation, either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <https://www.gnu.org/licenses/>. */
+
+/* Proudly written in GNU nano. */
+
+#define _GNU_SOURCE 1
+
+#include "9pfs.h"
+#include "io_S.h"
+#include <fcntl.h>
+#include <errno.h>
+#include <mach.h>
+
+error_t
+S_io_write (struct protid *protid,
+            const char *data,
+            mach_msg_type_number_t datalen,
+            loff_t offset,
+            vm_size_t *amount)
+{
+  error_t err;
+  struct peropen *po;
+  struct node *np;
+  loff_t start;
+
+  if (protid == NULL)
+    return EOPNOTSUPP;
+
+  po = protid->po;
+  np = po->np;
+
+  if (!(po->user_open_flags & O_WRITE))
+    return EBADF;
+
+  *amount = datalen;
+
+  pthread_mutex_lock (&np->lock);
+
+  /* Cap amount to the size we can fit in one message.  */
+  if (*amount > np->max_message_size - 24)
+    *amount = np->max_message_size - 24;
+
+  /* FIXME: Respect O_APPEND.  In 9P2000.L, perhaps we can use
+     the native O_APPEND flags when opening?  */
+  start = offset == -1 ? po->offset : offset;
+
+  /* TODO: Write here.  */
+
+  if (offset != -1)
+    po->offset += *amount;
+
+ out:
+  pthread_mutex_unlock (&np->lock);
+
+  return err;
+}

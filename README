@@ -1,0 +1,23 @@
+9pfs is a 9P translator for GNU Hurd
+
+This is work-in-progress, but some things are already working. In
+particular, the FS is read-only for now.
+
+There is an old version based on libnetfs (see netfs.c), and the new one
+that implements the various RPCs directly.
+
+Example usage:
+
+$ settrans -c /tmp/9p.io ./9pfs 9p.io
+$ ls /tmp/9p.io/
+9grid adm contrib dist extra lsr nix patch plan9 _sources wiki xen
+
+Potentially, this could be used together with virtio (see virtio-9p) to
+get shared directories with a host machine for a VM running GNU/Hurd.
+
+Build with 'make', or 'make CFLAGS=-g' for debugging.
+
+To contribute improvements, send patches to bug-hurd@gnu.org with
+[PATCH 9pfs] in the subject.
+
+9pfs is distributed under GPL v3+.
