@@ -29,6 +29,7 @@ S_file_check_access (struct protid *pi, int *allowed)
   if (!pi)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EROFS;
+  /* TODO: do something smarter */
+  *allowed = O_READ | O_WRITE | O_EXEC;
+  return 0;
 }
