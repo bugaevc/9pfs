@@ -99,8 +99,47 @@ S_dir_readdir (struct protid *pi,
     {
       /* Look through the buffered data.  */
       if (p9_version >= P9_VERSION_2000_L)
-        /* TODO: .L */
-        assert_backtrace (0);
+        {
+          struct p9_qid qid;
+          size_t consumed = 0;
+          unsigned char type;
+          char *name;
+          size_t namelen, reclen;
+
+          err = p9_dirent_deserialize (db->remaining_size, db->ptr,
+                                       &consumed, &pi->dir.next_offset,
+                                       &qid, &type, &name);
+          if (err)
+            goto out;
+
+          if (entry > pi->dir.next_entry)
+            goto next_entry_l;
+
+          namelen = strlen (name);
+          reclen = round_size_up (sizeof (struct dirent64) + namelen,
+                                  __alignof__ (struct dirent64));
+          if (!make_space (reclen))
+            break;
+          dirent = (struct dirent64 *) (*data + *datacnt);
+          assert_backtrace ((uintptr_t) dirent
+                            % __alignof__ (struct dirent64) == 0);
+          dirent->d_ino = qid.path;
+          dirent->d_reclen = reclen;
+          dirent->d_type = type;  /* DT values match between Linux and Hurd */
+          dirent->d_namlen = namelen;
+          memcpy (&dirent->d_name[0], name, namelen);
+          dirent->d_name[namelen] = 0;
+
+          *datacnt += reclen;
+          (*amt)++;
+          entry++;
+
+ next_entry_l:
+          free (name);
+          db->ptr += consumed;
+          db->remaining_size -= consumed;
+          pi->dir.next_entry++;
+        }
       else
         {
           struct p9_stat s = { 0 };

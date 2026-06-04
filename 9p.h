@@ -192,6 +192,13 @@ error_t p9_stat_deserialize (struct p9_stat *s, size_t size,
                              const unsigned char *data,
                              size_t *restrict consumed);
 
+error_t
+p9_dirent_deserialize (size_t size, const unsigned char *data,
+                       size_t *restrict consumed,
+                       uint64_t *next_offset,
+                       struct p9_qid *qid,
+                       unsigned char *type, char **name);
+
 enum p9_mode
 {
   /* Bits defined by the 9P2000.u extension. */

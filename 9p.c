@@ -205,6 +205,50 @@ p9_stat_deserialize (struct p9_stat *s, size_t size,
   return 0;
 }
 
+error_t
+p9_dirent_deserialize (size_t size, const unsigned char *data,
+                       size_t *restrict consumed,
+                       uint64_t *next_offset,
+                       struct p9_qid *qid,
+                       unsigned char *type, char **name)
+{
+  uint16_t name_len;
+
+  if (size < 13 + 8 + 1 + 2)
+    return EIO;
+  *consumed = 0;
+
+  memcpy (&qid->type, data + *consumed, 1);
+  (*consumed)++;
+
+  memcpy (&qid->version, data + *consumed, 4);
+  qid->version = le32toh (qid->version);
+  *consumed += 4;
+
+  memcpy (&qid->path, data + *consumed, 8);
+  qid->path = le64toh (qid->path);
+  *consumed += 8;
+
+  memcpy (next_offset, data + *consumed, 8);
+  *next_offset = le64toh (*next_offset);
+  *consumed += 8;
+
+  memcpy (type, data + *consumed, 1);
+  (*consumed)++;
+
+  memcpy (&name_len, data + *consumed, 2);
+  name_len = le16toh (name_len);
+  *consumed += 2;
+  if (*consumed + name_len > size)
+    return EIO;
+  *name = strndup ((const char *) data + *consumed, name_len);
+  if (name == NULL)
+    return errno;
+  *consumed += name_len;
+
+  return 0;
+}
+
 mode_t
 p9_mode_to_mode (uint32_t p9_mode, int is_blockdev)
 {
