@@ -86,6 +86,10 @@ S_fsys_getroot (struct port_info *control,
   retry_name[0] = '\0';
 
  out:
+  /* If the attach request failed, don't attempt to clunk
+     the invalid fid.  */
+  if (err)
+    pi->walk_fid = P9_NO_FID;
   if (pi)
     ports_port_deref (pi);
   p9_nrele (np);
