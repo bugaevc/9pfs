@@ -23,21 +23,26 @@
 #include <string.h>
 
 struct protid *
-p9_make_protid (struct peropen *po)
+p9_make_protid (struct peropen *po, struct iouser *cred)
 {
   error_t err;
   struct protid *pi;
 
-  err = ports_create_port (p9_protid_class, p9_bucket,
-                           sizeof (struct protid), &pi);
+  if (cred)
+    err = ports_create_port (p9_protid_class, p9_bucket,
+                             sizeof (struct protid), &pi);
+  else
+    err = ports_create_port_noinstall (p9_protid_class, p9_bucket,
+                                       sizeof (struct protid), &pi);
+
+
   if (err)
     {
       errno = err;
       return NULL;
     }
 
-  /* TODO */
-  pi->user = NULL;
+  pi->user = cred;
   /* Consume the reference.  */
   pi->po = po;
   pi->walk_fid = pi->io_fid = P9_NO_FID;

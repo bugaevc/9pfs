@@ -119,7 +119,8 @@ struct protid
 struct node *p9_make_node (void);
 struct peropen *p9_make_peropen (struct node *np, int flags,
                                  struct peropen *context);
-struct protid *p9_make_protid (struct peropen *po);
+struct protid *p9_make_protid (struct peropen *po,
+                               struct iouser *cred);
 void p9_release_protid (void *arg);
 void p9_release_peropen (struct peropen *po);
 void p9_nref (struct node *np);

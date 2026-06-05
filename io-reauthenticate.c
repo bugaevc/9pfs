@@ -22,18 +22,67 @@
 #include "9pfs.h"
 #include "io_S.h"
 #include <errno.h>
+#include <hurd/iohelp.h>
 
 error_t
 S_io_reauthenticate (struct protid *protid,
                      mach_port_t rend_port)
 {
-  error_t err;
+  error_t err, err2;
   struct peropen *po;
-  struct protid *newpi;
+  struct protid *new_pi;
+  mach_port_t auth, new_right;
 
   if (!protid)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EOPNOTSUPP;
+  auth = getauth ();
+  if (!MACH_PORT_VALID (auth))
+    return EGRATUITOUS;
+
+  /* TODO: this maybe needs to hold the node lock? */
+
+  po = protid->po;
+  refcount_ref (&po->refcount);
+
+  /* Make a new protid, without any user for now.
+     This also prevents the port from being instantly installed
+     into its bucket.  */
+  do
+    new_pi = p9_make_protid (po, NULL);
+  while (!new_pi && errno == EINTR);
+
+  if (!new_pi)
+    {
+      mach_port_deallocate (mach_task_self (), auth);
+      p9_release_peropen (po);
+      return errno;
+    }
+
+  new_right = ports_get_send_right (new_pi);
+  assert_backtrace (MACH_PORT_VALID (new_right));
+
+  err = iohelp_reauth (&new_pi->user, auth, rend_port,
+                       new_right, TRUE);
+
+  if (!err)
+    {
+      err2 = mach_port_deallocate (mach_task_self (), rend_port);
+      assert_perror_backtrace (err2);
+    }
+  err2 = mach_port_deallocate (mach_task_self (), new_right);
+  assert_perror_backtrace (err2);
+  err2 = mach_port_deallocate (mach_task_self (), auth);
+  assert_perror_backtrace (err2);
+
+  if (!err)
+    {
+      err2 = mach_port_move_member (mach_task_self (), new_right,
+                                    p9_bucket->portset);
+      assert_perror_backtrace (err2);
+    }
+
+  ports_port_deref (new_pi);
+
+  return err;
 }

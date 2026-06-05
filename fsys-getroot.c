@@ -23,6 +23,7 @@
 #include "fsys_S.h"
 #include <errno.h>
 #include <mach.h>
+#include <hurd/fshelp.h>
 
 error_t
 S_fsys_getroot (struct port_info *control,
@@ -37,6 +38,7 @@ S_fsys_getroot (struct port_info *control,
 {
   error_t err;
   struct node *np;
+  struct iouser *cred;
   struct peropen *po;
   struct protid *pi = NULL;
 
@@ -57,11 +59,19 @@ S_fsys_getroot (struct port_info *control,
       goto out;
     }
 
-  pi = p9_make_protid (po);
+  err = iohelp_create_complex_iouser (&cred, uids, nuids, gids, ngids);
+  if (err)
+    {
+      p9_release_peropen (po);
+      goto out;
+    }
+
+  pi = p9_make_protid (po, cred);
   if (!pi)
     {
       err = errno;
       p9_release_peropen (po);
+      iohelp_free_iouser (cred);
       goto out;
     }
 

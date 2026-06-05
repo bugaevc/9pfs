@@ -24,6 +24,7 @@
 #include "fs_S.h"
 #include <string.h>
 #include <errno.h>
+#include <hurd/iohelp.h>
 
 #define MAX_PARTS 16
 
@@ -43,6 +44,7 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
   uint32_t prev_fid, next_fid;
   struct peropen *npo;
   struct protid *npi = NULL;
+  struct iouser *ncred;
 
   if (!pi)
     return EOPNOTSUPP;
@@ -104,11 +106,19 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
               goto out;
             }
 
-          npi = p9_make_protid (npo);
+          err = iohelp_dup_iouser (&ncred, pi->user);
+          if (err)
+            {
+              p9_release_peropen (npo);
+              goto out;
+            }
+
+          npi = p9_make_protid (npo, ncred);
           if (!npi)
             {
               err = errno;
               p9_release_peropen (npo);
+              iohelp_free_iouser (ncred);
               goto out;
             }
 

@@ -21,6 +21,7 @@
 
 #include "9pfs.h"
 #include "9p-rpc.h"
+#include <hurd/iohelp.h>
 
 void
 p9_release_protid (void *arg)
@@ -52,6 +53,6 @@ p9_release_protid (void *arg)
       assert_perror_backtrace (err);
     }
 
-  // iohelp_free_iouser (pi->user);
+  iohelp_free_iouser (pi->user);
   p9_release_peropen (pi->po);
 }

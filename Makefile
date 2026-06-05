@@ -19,7 +19,7 @@ $(IO_SRCS) main.o: io_S.h
 $(FS_SRCS) main.o: fs_S.h
 
 9pfs: $(SRCS)
-	$(CC) $(CFLAGS) $^ -o $@ -l shouldbeinlibc -l ihash -l ports -pthread
+	$(CC) $(CFLAGS) $^ -o $@ -l shouldbeinlibc -l ihash -l ports -pthread -l iohelp -l fshelp
 
 %Server.c %_S.h:
 	echo "#include <hurd/"$*".defs>" | $(MIG) \
