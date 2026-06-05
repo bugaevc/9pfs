@@ -26,9 +26,5 @@
 error_t
 S_file_notice_changes (struct protid *pi, mach_port_t port)
 {
-  if (!pi)
-    return EOPNOTSUPP;
-
-  /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

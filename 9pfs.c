@@ -126,7 +126,7 @@ p9_ensure_open (struct protid *pi, int flags)
   if ((pi->server_open_flags & flags) == flags)
     return 0;
 
-  switch (flags)
+  switch (flags | pi->server_open_flags)
     {
     case O_READ:
       core_mode = 0;
@@ -181,7 +181,7 @@ p9_ensure_open (struct protid *pi, int flags)
 
   if (!err)
     {
-      pi->server_open_flags = flags;
+      pi->server_open_flags |= flags;
       /* Some servers are known to send a 0 iounit; ignore it.  */
       if (max_message_size > 0)
         pi->po->np->max_message_size = max_message_size;
