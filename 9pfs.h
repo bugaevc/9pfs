@@ -41,6 +41,8 @@ extern FILE *p9_conn_in, *p9_conn_out;
 extern char *p9_user_name;
 extern uint32_t p9_uid;
 
+extern boolean_t p9_readonly;
+
 /* UID and GID of the local 'nobody' user.  */
 extern uid_t p9_nobody_uid;
 extern gid_t p9_nobody_gid;

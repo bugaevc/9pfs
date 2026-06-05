@@ -36,6 +36,8 @@ S_dir_mkdir (struct protid *pi, const char *name, mode_t mode)
 
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   if (p9_version >= P9_VERSION_2000_L)
     {

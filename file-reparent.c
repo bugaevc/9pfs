@@ -30,6 +30,8 @@ S_file_reparent (struct protid *pi, mach_port_t parent,
 {
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
   return EROFS;

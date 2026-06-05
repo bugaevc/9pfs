@@ -42,6 +42,8 @@ S_fsys_getroot (struct port_info *control,
 
   if (control != p9_control)
     return EOPNOTSUPP;
+  if (p9_readonly && (flags & O_WRITE))
+    return EROFS;
 
   np = p9_make_node ();
   if (!np)

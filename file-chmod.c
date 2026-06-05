@@ -28,6 +28,8 @@ S_file_chmod (struct protid *pi, mode_t new_mode)
 {
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
   return EROFS;

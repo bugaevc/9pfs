@@ -35,6 +35,8 @@ S_dir_unlink (struct protid *pi, const char *name)
 
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   if (p9_version >= P9_VERSION_2000_L)
     {

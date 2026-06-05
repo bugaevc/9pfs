@@ -28,6 +28,8 @@ S_file_chauthor (struct protid *pi, uid_t new_author)
 {
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
   return EROFS;

@@ -45,6 +45,7 @@ char *p9_aname;
 /* If not specified, allow everything.  */
 mode_t p9_mode_mask = ~0;
 int p9_dump_exchanges;
+boolean_t p9_readonly;
 char *p9_settrans_path;
 
 static char *server_host;
@@ -68,6 +69,12 @@ static const struct argp_option common_options[] =
   {"aname", 'a', "NAME", 0, "Pick remote file tree"},
   {"mask", 'm', "MASK", OPTION_ARG_OPTIONAL, "Apply MASK (default: 0755)"
                                              " to file permissions"},
+  {"readonly", 'r', 0, 0, "Disallow any modifications"},
+  {"rdonly", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
+  {"ro", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
+  {"writable", 'w', 0, 0, "Allow modifications (on by default)"},
+  {"rdwr", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
+  {"rw", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
   {"dump-9p", 'D', 0, 0, "Dump 9P exchanges to stderr for debugging"},
   {0, 0},
 };
@@ -103,6 +110,14 @@ parse_common_opt (int key, char *arg, struct argp_state *state)
       else
         /* Disallow writing to anyone but the owner.  */
         p9_mode_mask = 0755;
+      return 0;
+
+    case 'r':
+      p9_readonly = TRUE;
+      return 0;
+
+    case 'w':
+      p9_readonly = FALSE;
       return 0;
 
     case 'D':

@@ -28,6 +28,8 @@ S_file_chflags (struct protid *pi, int new_flags)
 {
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
   return EROFS;
