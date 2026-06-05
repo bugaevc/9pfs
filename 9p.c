@@ -21,6 +21,7 @@
 
 #include "9p.h"
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -247,6 +248,53 @@ p9_dirent_deserialize (size_t size, const unsigned char *data,
   *consumed += name_len;
 
   return 0;
+}
+
+error_t
+p9_wstat (uint32_t fid, const struct p9_stat *s)
+{
+  uint16_t stat_size;
+
+  if (p9_version >= P9_VERSION_2000_U)
+    {
+      stat_size = p9_serialized_size (P9_STAT_BASIC "s444",
+                                      s->size, s->type, s->dev,
+                                      s->qid.type, s->qid.version, s->qid.path,
+                                      s->mode, s->atime, s->mtime,
+                                      s->length, s->name,
+                                      s->uid, s->gid, s->muid,
+                                      s->extension,
+                                      s->n_uid, s->n_gid, s->n_muid);
+      return p9_rpc (P9_WSTAT_REQUEST,
+                     "42" P9_STAT_BASIC "s444", fid,
+                     stat_size, stat_size - 2,
+                     s->type, s->dev,
+                     s->qid.type, s->qid.version, s->qid.path,
+                     s->mode, s->atime, s->mtime,
+                     s->length, s->name,
+                     s->uid, s->gid, s->muid,
+                     s->extension,
+                     s->n_uid, s->n_gid, s->n_muid,
+                     "");
+    }
+  else
+    {
+      stat_size = p9_serialized_size (P9_STAT_BASIC,
+                                      s->size, s->type, s->dev,
+                                      s->qid.type, s->qid.version, s->qid.path,
+                                      s->mode, s->atime, s->mtime,
+                                      s->length, s->name,
+                                      s->uid, s->gid, s->muid);
+      return p9_rpc (P9_WSTAT_REQUEST,
+                     "42" P9_STAT_BASIC, fid,
+                     stat_size, stat_size - 2,
+                     s->type, s->dev,
+                     s->qid.type, s->qid.version, s->qid.path,
+                     s->mode, s->atime, s->mtime,
+                     s->length, s->name,
+                     s->uid, s->gid, s->muid,
+                     "");
+    }
 }
 
 mode_t

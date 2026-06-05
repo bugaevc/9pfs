@@ -20,15 +20,36 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "fs_S.h"
 #include <errno.h>
 
 error_t
 S_file_set_size (struct protid *pi, loff_t new_size)
 {
+  error_t err;
+  struct p9_stat s;
+
   if (!pi)
     return EOPNOTSUPP;
+  if (new_size < 0)
+    return EINVAL;
+  if (!(pi->po->user_open_flags & O_WRITE))
+    return EBADF;
+  /* Should not really happen due to the above check.  */
+  if (p9_readonly)
+    return EROFS;
 
-  /* TODO */
-  return EROFS;
+  if (p9_version >= P9_VERSION_2000_L)
+    return p9_rpc (P9_SETATTR_REQUEST,
+                   "4444488888", pi->walk_fid, P9_SETATTR_MASK_SIZE,
+                   0, 0, 0, new_size, 0, 0, 0, 0,
+                   "");
+
+  p9_stat_dont_touch (&s);
+  s.length = new_size;
+  err = p9_wstat (pi->walk_fid, &s);
+  p9_stat_free (&s);
+
+  return err;
 }

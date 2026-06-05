@@ -186,6 +186,9 @@ struct p9_stat
 void p9_stat_dont_touch (struct p9_stat *s);
 void p9_stat_free (struct p9_stat *s);
 
+/* Send wstat request on FID for STAT.  */
+error_t p9_wstat (uint32_t fid, const struct p9_stat *s);
+
 /* Parse a serialized stat from an in-memory buffer at DATA of size
    SIZE.  Set CONSUMED to the number of bytes of input consumed.  */
 error_t p9_stat_deserialize (struct p9_stat *s, size_t size,
