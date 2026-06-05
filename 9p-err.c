@@ -135,7 +135,7 @@ static const struct p9_lerror lerrors[] =
   {39, ENOTEMPTY},
   {40, ELOOP},
   {41, EWOULDBLOCK},
-  {95, ENOTSUP},
+  {95, EOPNOTSUPP},
 };
 
 error_t

@@ -42,8 +42,7 @@ S_dir_rmdir (struct protid *pi, const char *name)
       err = p9_rpc (P9_UNLINKAT_REQUEST,
                     "4s4", pi->walk_fid, name, 0x200,
                     "");
-      /* TODO: we never actually produce ENOTSUP */
-      if (err != ENOTSUP)
+      if (err != EOPNOTSUPP)
         return err;
     }
 
