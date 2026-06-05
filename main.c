@@ -28,6 +28,7 @@
 #include <error.h>
 #include <stdio.h>
 #include <pwd.h>
+#include <argz.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -224,7 +225,7 @@ static const struct argp_child runtime_argp_children[] =
   {0},
 };
 
-static struct argp runtime_argp = { 0, 0, 0, 0, runtime_argp_children };
+const struct argp p9_runtime_argp = { 0, 0, 0, 0, runtime_argp_children };
 
 static const struct argp startup_argp =
 {
@@ -234,6 +235,57 @@ static const struct argp startup_argp =
   doc,
   runtime_argp_children,
 };
+
+error_t
+p9_append_args (char **argz, size_t *argz_len)
+{
+  error_t err = 0;
+  char *arg;
+
+  if (allow_ip == 4)
+    err = argz_add (argz, argz_len, "-4");
+  else if (allow_ip == 6)
+    err = argz_add (argz, argz_len, "-6");
+
+  if (err)
+    return err;
+
+  if (p9_mode_mask != ~0)
+    {
+      asprintf (&arg, "--mask=0%o", p9_mode_mask);
+      err = argz_add (argz, argz_len, arg);
+      free (arg);
+      if (err)
+        return err;
+    }
+
+  if (p9_readonly)
+    err = argz_add (argz, argz_len, "--readonly");
+  if (err)
+    return err;
+
+  if (p9_dump_exchanges)
+    err = argz_add (argz, argz_len, "--dump-9p");
+  if (err)
+    return err;
+
+  /* TODO: there may be duplication between the aname parsed from this
+     source and specified with --aname; format this more carefully.  */
+  err = argz_add (argz, argz_len, p9_source);
+  if (err)
+    return err;
+
+  if (p9_aname)
+    {
+      asprintf (&arg, "--aname=%s", p9_aname);
+      err = argz_add (argz, argz_len, arg);
+      free (arg);
+      if (err)
+        return err;
+    }
+
+  return 0;
+}
 
 /* Adopted form libports/notify_S.h */
 extern mig_routine_t ports_notify_server_routines[];

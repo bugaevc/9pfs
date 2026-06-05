@@ -22,14 +22,31 @@
 #include "9pfs.h"
 #include "fs_S.h"
 #include <errno.h>
+#include <argz.h>
+#include <hurd/iohelp.h>
 
 error_t
 S_file_get_fs_options (struct protid *pi, char **options,
                        mach_msg_type_number_t *options_size)
 {
+  error_t err;
+  char *argz = 0;
+  size_t argz_len = 0;
+
   if (!pi)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EROFS;
+  err = argz_add (&argz, &argz_len, program_invocation_name);
+  if (err)
+    return err;
+
+  err = p9_append_args (&argz, &argz_len);
+  if (err)
+    {
+      free (argz);
+      return err;
+    }
+
+  return iohelp_return_malloced_buffer (argz, argz_len,
+                                        options, options_size);
 }

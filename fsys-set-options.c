@@ -21,6 +21,7 @@
 #include "9pfs.h"
 #include "fsys_S.h"
 #include <errno.h>
+#include <hurd/fshelp.h>
 
 error_t
 S_fsys_set_options (struct port_info *control,
@@ -31,6 +32,5 @@ S_fsys_set_options (struct port_info *control,
   if (control != p9_control)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EOPNOTSUPP;
+  return fshelp_set_options (&p9_runtime_argp, 0, data, data_len, 0);
 }

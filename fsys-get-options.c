@@ -21,15 +21,31 @@
 #include "9pfs.h"
 #include "fsys_S.h"
 #include <errno.h>
+#include <argz.h>
+#include <hurd/iohelp.h>
 
 error_t
 S_fsys_get_options (struct port_info *control,
                     data_t *data,
                     mach_msg_type_number_t *data_len)
 {
+  error_t err;
+  char *argz = 0;
+  size_t argz_len = 0;
+
   if (control != p9_control)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EOPNOTSUPP;
+  err = argz_add (&argz, &argz_len, program_invocation_name);
+  if (err)
+    return err;
+
+  err = p9_append_args (&argz, &argz_len);
+  if (err)
+    {
+      free (argz);
+      return err;
+    }
+
+  return iohelp_return_malloced_buffer (argz, argz_len, data, data_len);
 }

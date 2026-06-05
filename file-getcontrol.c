@@ -22,14 +22,29 @@
 #include "9pfs.h"
 #include "fs_S.h"
 #include <errno.h>
+#include <unistd.h>
+#include <hurd/fshelp.h>
 
 error_t
 S_file_getcontrol (struct protid *pi, mach_port_t *control,
                    mach_msg_type_name_t *control_type)
 {
+  error_t err;
+  struct stat64 pseudo_root_stat;
+
   if (!pi)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EROFS;
+  /* Make up a "root node stat" to appease fshelp_iscontroller.  */
+  memset (&pseudo_root_stat, 0, sizeof (pseudo_root_stat));
+  pseudo_root_stat.st_uid = geteuid ();
+  pseudo_root_stat.st_gid = getegid ();
+
+  err = fshelp_iscontroller (&pseudo_root_stat, pi->user);
+  if (err)
+    return err;
+
+  *control = ports_get_right (p9_control);
+  *control_type = MACH_MSG_TYPE_MAKE_SEND;
+  return 0;
 }
