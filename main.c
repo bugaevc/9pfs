@@ -427,7 +427,7 @@ establish_connection ()
   if (fd < 0)
     error (1, errno, "Cannot open connection");
 
-  fd_dup = fcntl (fd, F_DUPFD_CLOEXEC);
+  fd_dup = fcntl (fd, F_DUPFD_CLOEXEC, fd);
   if (fd_dup < 0)
     error (1, errno, "fcntl(F_DUPFD_CLOEXEC)");
 
