@@ -61,6 +61,8 @@ extern int p9_dump_exchanges;
 extern char *p9_settrans_path;
 
 extern enum p9_version p9_version;
+/* Global limit on message sizes, including all the headings.  */
+extern uint32_t p9_max_message_size;
 
 extern struct port_class *p9_control_class;
 extern struct port_class *p9_protid_class;

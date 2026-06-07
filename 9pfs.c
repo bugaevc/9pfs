@@ -27,6 +27,7 @@
 #include <hurd/ports.h>
 
 enum p9_version p9_version;
+uint32_t p9_max_message_size;
 
 struct port_class *p9_control_class;
 struct port_class *p9_protid_class;
@@ -38,7 +39,6 @@ p9_startup (void)
 {
   error_t err;
   mach_port_t underlying, right, bootstrap;
-  uint32_t max_message_size = 16 * 1024 * 1024;
   char *remote_version;
 
   /* Create the port classes, bucket, and control port.  */
@@ -62,10 +62,13 @@ p9_startup (void)
         error (10, 0, "Must be started as a translator");
     }
 
+  /* Our own proposed limit on message size.  */
+  p9_max_message_size = 16 * 1024 * 1024;
+
   /* Negotiate the 9P connection.  */
   err = p9_rpc (P9_VERSION_REQUEST,
-                "4s", max_message_size, "9P2000.L",
-                "4s", &max_message_size, &remote_version);
+                "4s", p9_max_message_size, "9P2000.L",
+                "4s", &p9_max_message_size, &remote_version);
   if (err)
     error (1, err, "Failed to negotitate protocol version");
 
@@ -76,8 +79,10 @@ p9_startup (void)
   else
     p9_version = P9_VERSION_2000;
 
-  if (max_message_size == 0)
-    error (1, 0, "Remote server sent max message size of 0");
+  /* 24 is the absolute minimum size we need to send a single byte
+     of payload in a write message.  */
+  if (p9_max_message_size < 24)
+    error (1, 0, "Remote server reports an overly low message size limit");
 
   err = ports_create_port (p9_control_class, p9_bucket,
                            sizeof (struct port_info), &p9_control);
@@ -183,7 +188,8 @@ p9_ensure_open (struct protid *pi, int flags)
     {
       pi->server_open_flags |= flags;
       /* Some servers are known to send a 0 iounit; ignore it.  */
-      if (max_message_size > 0)
+      if (max_message_size > 0 &&
+          max_message_size < pi->po->np->max_message_size)
         pi->po->np->max_message_size = max_message_size;
     }
 

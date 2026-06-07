@@ -41,5 +41,8 @@ p9_make_node (void)
       return NULL;
     }
 
+  /* Start with the overall limit.  */
+  np->max_message_size = p9_max_message_size;
+
   return np;
 }
