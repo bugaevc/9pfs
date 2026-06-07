@@ -144,7 +144,9 @@ void p9_fid_free (uint32_t fid);
 enum
 {
   /* Modes settable with io_*_openmodes () calls.  */
-  HONORED_STATE_MODES = O_APPEND|O_ASYNC|O_FSYNC|O_NONBLOCK|O_NOATIME
+  HONORED_STATE_MODES = O_APPEND|O_ASYNC|O_FSYNC|O_NONBLOCK|O_NOATIME,
+  /* Modes that only have meaning during open () */
+  OPENONLY_STATE_MODES = O_CREAT|O_EXCL|O_NOLINK|O_NOTRANS|O_NONBLOCK|O_EXLOCK|O_SHLOCK
 };
 
 error_t p9_ensure_open (struct protid *pi, int flags);

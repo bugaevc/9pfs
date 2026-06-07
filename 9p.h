@@ -230,4 +230,7 @@ uint32_t p9_mode_to_d_type (uint32_t p9_mode, int is_blockdev);
 uid_t p9_uid_to_uid (const char *name, uint32_t n_uid);
 gid_t p9_gid_to_gid (const char *name, uint32_t n_gid);
 
+int p9_open_flags_to_lflags (int flags);
+unsigned char p9_open_flags_to_core_mode (int flags);
+
 #endif

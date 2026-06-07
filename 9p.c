@@ -414,3 +414,44 @@ p9_gid_to_gid (const char *name, uint32_t n_gid)
 {
   return p9_nobody_gid;
 }
+
+int
+p9_open_flags_to_lflags (int flags)
+{
+  int lflags = 0;
+
+  if ((flags & O_RDWR) == O_RDWR)
+    lflags |= 2;
+  else if (flags & O_WRITE)
+    lflags |= 1;
+
+  if (flags & O_EXCL)
+    lflags |= 0x80;
+  if (flags & O_APPEND)
+    lflags |= 0x400;
+  if (flags & O_NONBLOCK)
+    lflags |= 0x800;
+  if (flags & O_SYNC)
+    lflags |= 0x101000;
+
+  return lflags;
+}
+
+unsigned char
+p9_open_flags_to_core_mode (int flags)
+{
+  unsigned char mode = 0;
+
+  if ((flags & O_RDWR) == O_RDWR)
+    mode |= 2;
+  else if (flags & O_WRITE)
+    mode |= 1;
+
+  if (flags & O_EXEC)
+    mode |= 3;
+
+  if (flags & O_TRUNC)
+    mode |= 0x10;
+
+  return mode;
+}

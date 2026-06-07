@@ -131,7 +131,7 @@ p9_ensure_open (struct protid *pi, int flags)
   if ((pi->server_open_flags & flags) == flags)
     return 0;
 
-  switch (flags | pi->server_open_flags)
+  switch ((flags | pi->server_open_flags) & O_RDWR)
     {
     case O_READ:
       core_mode = 0;
@@ -139,7 +139,7 @@ p9_ensure_open (struct protid *pi, int flags)
       break;
     case O_WRITE:
       core_mode = 1;
-      l_flags = 0;
+      l_flags = 1;
       break;
     case O_RDWR:
       core_mode = 2;
@@ -149,7 +149,13 @@ p9_ensure_open (struct protid *pi, int flags)
       assert_backtrace (!"Bad flags");
     }
 
+  if (flags & O_EXEC)
+    core_mode |= 3;
+
   /* TODO: Do the below requests concurrently.  */
+
+  if (pi->walk_fid == P9_NO_FID)
+    return EBADF;
 
   if (pi->io_fid != P9_NO_FID)
     {

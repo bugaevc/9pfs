@@ -47,12 +47,13 @@ S_fsys_getroot (struct port_info *control,
   if (p9_readonly && (flags & O_WRITE))
     return EROFS;
 
+  flags &= O_HURD;
+
   np = p9_make_node ();
   if (!np)
     return errno;
 
-  /* TODO: trim flags */
-  po = p9_make_peropen (np, flags, NULL);
+  po = p9_make_peropen (np, flags & ~OPENONLY_STATE_MODES, NULL);
   if (!po)
     {
       err = errno;
