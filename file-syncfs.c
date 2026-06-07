@@ -26,11 +26,5 @@
 error_t
 S_file_syncfs (struct protid *pi, int wait, int do_children)
 {
-  error_t err;
-
-  if (!pi)
-    return EOPNOTSUPP;
-
-  /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

@@ -31,7 +31,6 @@ S_dir_unlink (struct protid *pi, const char *name)
   uint32_t new_fid;
   uint16_t n_qids;
   struct p9_qid *qids;
-  const char *parts[2];
 
   if (!pi)
     return EOPNOTSUPP;
@@ -49,10 +48,8 @@ S_dir_unlink (struct protid *pi, const char *name)
     }
 
   new_fid = p9_fid_alloc ();
-  parts[0] = name;
-  parts[1] = NULL;
   err = p9_rpc (P9_WALK_REQUEST,
-                "442S", pi->walk_fid, new_fid, 1, parts,
+                "442s", pi->walk_fid, new_fid, 1, name,
                 "Q", &n_qids, &qids);
   if (err)
     return err;

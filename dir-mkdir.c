@@ -56,7 +56,7 @@ S_dir_mkdir (struct protid *pi, const char *name, mode_t mode)
     return err;
 
   err = p9_rpc (P9_CREATE_REQUEST,
-                "4s41", new_fid, name, mode, 0,
+                "4s41", new_fid, name, mode | P9_MODE_DIR, 0,
                 "1484", &qid.type, &qid.version, &qid.path,
                 &max_message_size);
   p9_rpc (P9_CLUNK_REQUEST,

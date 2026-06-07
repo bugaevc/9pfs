@@ -90,6 +90,16 @@ S_fsys_getroot (struct port_info *control,
                   "148", &np->qid.type,
                   &np->qid.version, &np->qid.path);
   if (err)
+    {
+      /* Don't attempt to clunk the never-created fid.  */
+      pi->walk_fid = P9_NO_FID;
+      goto out;
+    }
+
+  /* If an open mode is requested for the very root,
+     apply it now.  */
+  err = p9_ensure_open (pi, flags & O_ACCMODE);
+  if (err)
     goto out;
 
   *do_retry = FS_RETRY_NORMAL;
@@ -98,10 +108,6 @@ S_fsys_getroot (struct port_info *control,
   retry_name[0] = '\0';
 
  out:
-  /* If the attach request failed, don't attempt to clunk
-     the invalid fid.  */
-  if (err)
-    pi->walk_fid = P9_NO_FID;
   if (pi)
     ports_port_deref (pi);
   p9_nrele (np);
