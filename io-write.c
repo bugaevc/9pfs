@@ -20,6 +20,7 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "io_S.h"
 #include <fcntl.h>
 #include <errno.h>
@@ -36,6 +37,7 @@ S_io_write (struct protid *protid,
   struct peropen *po;
   struct node *np;
   loff_t start;
+  uint32_t nwritten;
 
   if (protid == NULL)
     return EOPNOTSUPP;
@@ -45,23 +47,41 @@ S_io_write (struct protid *protid,
 
   if (!(po->user_open_flags & O_WRITE))
     return EBADF;
-
-  *amount = datalen;
+  else if (p9_readonly)
+    return EROFS;
 
   pthread_mutex_lock (&np->lock);
 
   /* Cap amount to the size we can fit in one message.  */
-  if (*amount > np->max_message_size - 24)
-    *amount = np->max_message_size - 24;
+  if (datalen > np->max_message_size - 24)
+    datalen = np->max_message_size - 24;
+
+  err = p9_ensure_open (protid, O_WRITE);
+  if (err)
+    goto out;
+
+  /* Cap amount again.  */
+  if (datalen > np->max_message_size - 24)
+    datalen = np->max_message_size - 24;
 
   /* FIXME: Respect O_APPEND.  In 9P2000.L, perhaps we can use
      the native O_APPEND flags when opening?  */
   start = offset == -1 ? po->offset : offset;
 
-  /* TODO: Write here.  */
+  /* Preemptively invalidate the stat cache.  */
+  np->last_stat = 0;
 
+  err = p9_rpc (P9_WRITE_REQUEST,
+                "48d", protid->io_fid, start, datalen, data,
+                "4", &nwritten);
+  if (err)
+    goto out;
+  if (nwritten > datalen)
+    return EIO;
+
+  *amount = nwritten;
   if (offset != -1)
-    po->offset += *amount;
+    po->offset += nwritten;
 
  out:
   pthread_mutex_unlock (&np->lock);
