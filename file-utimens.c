@@ -20,6 +20,7 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "fs_S.h"
 #include <errno.h>
 
@@ -27,9 +28,59 @@ error_t
 S_file_utimens (struct protid *pi, struct timespec new_atime,
                 struct timespec new_mtime)
 {
+  error_t err;
+  struct p9_stat s;
+
   if (!pi)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
-  /* TODO */
-  return EROFS;
+  pi->po->np->last_stat = 0;
+
+  if (p9_version >= P9_VERSION_2000_L)
+    {
+      enum p9_setattr_mask mask = 0;
+
+      if (new_atime.tv_nsec == UTIME_OMIT)
+        ; /* omit */
+      else if (new_atime.tv_nsec == UTIME_NOW)
+        mask |= P9_SETATTR_MASK_ATIME;
+      else
+        mask |= P9_SETATTR_MASK_ATIME | P9_SETATTR_MASK_ATIME_SET;
+
+      if (new_mtime.tv_nsec == UTIME_OMIT)
+        ; /* omit */
+      else if (new_mtime.tv_nsec == UTIME_NOW)
+        mask |= P9_SETATTR_MASK_MTIME;
+      else
+        mask |= P9_SETATTR_MASK_MTIME | P9_SETATTR_MASK_MTIME_SET;
+
+      return p9_rpc (P9_SETATTR_REQUEST,
+                     "4444488888", pi->walk_fid, mask, 0, 0, 0, 0,
+                     new_atime.tv_sec, new_atime.tv_nsec,
+                     new_mtime.tv_sec, new_mtime.tv_nsec,
+                     "");
+    }
+
+  p9_stat_dont_touch (&s);
+
+  if (new_atime.tv_nsec == UTIME_OMIT)
+    ; /* omit */
+  else if (new_atime.tv_nsec == UTIME_NOW)
+    s.atime = time (NULL);
+  else
+    s.atime = new_atime.tv_sec;
+
+  if (new_mtime.tv_nsec == UTIME_OMIT)
+    ; /* omit */
+  else if (new_mtime.tv_nsec == UTIME_NOW)
+    s.mtime = time (NULL);
+  else
+    s.mtime = new_mtime.tv_sec;
+
+  err = p9_wstat (pi->walk_fid, &s);
+  p9_stat_free (&s);
+
+  return err;
 }

@@ -40,6 +40,8 @@ S_file_set_size (struct protid *pi, loff_t new_size)
   if (p9_readonly)
     return EROFS;
 
+  pi->po->np->last_stat = 0;
+
   if (p9_version >= P9_VERSION_2000_L)
     return p9_rpc (P9_SETATTR_REQUEST,
                    "4444488888", pi->walk_fid, P9_SETATTR_MASK_SIZE,
