@@ -54,9 +54,6 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
   if (p9_readonly && (flags & (O_WRITE | O_EXCL)))
     return EROFS;
 
-  /* TODO: should we also fail-fast on O_CREAT even in case
-     the file does exist?  */
-
   flags &= O_HURD;
   prev_fid = pi->walk_fid;
 
@@ -88,18 +85,14 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
         {
           boolean_t create;
 
-          /* If O_CREAT is specified, avoid looking up the very last
-             part just yet.  */
           create = !*slash && (flags & O_CREAT);
-          if (create)
-            {
-              /* TODO: is this the expected behavior? */
-              if (must_be_dir)
-                return EINVAL;
-              n_parts--;
-            }
           parts[n_parts] = NULL;
           next_fid = p9_fid_alloc ();
+
+          if (create && (flags & O_EXCL) && !p9_readonly)
+            goto creat;
+          /* In read-only mode, O_CREAT|O_EXCL requests cannot succeed
+             in any case, but we need to produce the correct error code.  */
 
           err = p9_rpc (P9_WALK_REQUEST,
                         "442S", prev_fid, next_fid, n_parts, parts,
@@ -110,33 +103,73 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
             p9_rpc (P9_CLUNK_REQUEST,
                     "4", prev_fid, "");
           if (err)
-            return err;
+            {
+              if (err == ENOENT && create && n_parts == 1)
+                /* If looking up the very first part fails, we get an error.  */
+                goto creat;
+              return err;
+            }
+          else if (n_qids > n_parts)
+            {
+              /* What?  */
+              fprintf (stderr, "Unexpectedly too many qids in Rwalk\n");
+              free (qids);
+              return EIO;
+            }
+          else if ((!create && n_qids < n_parts)
+                   || (n_qids + 1 < n_parts))
+            {
+              /* If we're missing some parts, that's an ENOENT.  For the case of
+                 O_CREAT, allow missing the last part, but not any of the previous
+                 ones.  */
+              free (qids);
+              return ENOENT;
+            }
 
-          prev_fid = next_fid;
+          if (n_qids == n_parts)
+            prev_fid = next_fid;
 
           if (create)
             {
-              /* Low look up the last part.  Try walk, then create, then walk again.
-                 This way, we succeed if the file exists but could not be created
-                 (and the error code needs not be EEXIST), and also multiple clients
-                 opening the file with O_CREAT concurrently get the expected behavior.  */
+              if (n_qids == n_parts)
+                {
+                  /* The file exists.  */
+                  if (flags & O_EXCL)
+                    {
+                      assert_backtrace (p9_readonly);
+                      free (qids);
+                      return EEXIST;
+                    }
+                  goto found;
+                }
+              /* Enforced above.  */
+              assert_backtrace (n_qids + 1 == n_parts);
+
               free (qids);
               qids = NULL;
 
-              if (!(flags & O_EXCL))
-                {
-                  err = p9_rpc (P9_WALK_REQUEST,
-                                "442s", prev_fid, prev_fid, 1, part,
-                                "Q", &n_qids, &qids);
+creat:
+              /* A lookup of the last part failed, now try to create it, but if that
+                 fails with EEXIST, try to walk again. This way, multiple clients
+                 opening the file with O_CREAT concurrently get the expected behavior.  */
 
-                  if (!err)
-                    goto found;
-                  else if (err != ENOENT)
-                    {
-                      p9_rpc (P9_CLUNK_REQUEST,
-                              "4", prev_fid, "");
-                      return err;
-                    }
+              if (must_be_dir)
+                /* https://lwn.net/Articles/926782 */
+                return EINVAL;
+              if (p9_readonly)
+                return EROFS;
+
+              /* Walk to the parent directory.  */
+              parts[n_parts - 1] = NULL;
+              err = p9_rpc (P9_WALK_REQUEST,
+                            "442S", prev_fid, next_fid, n_parts - 1, parts,
+                            "Q", &n_qids, &qids);
+              if (err)
+                return err;
+              else if (n_qids != n_parts - 1)
+                {
+                  free (qids);
+                  return ENOENT;
                 }
 
               n_qids = 1;
@@ -165,6 +198,7 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
                 }
               else if ((flags & O_EXCL) || err != EEXIST)
                 {
+                  /* Any error, except for EEXIST in case of !O_EXCL.  */
                   p9_rpc (P9_CLUNK_REQUEST,
                           "4", next_fid, "");
                   return err;
@@ -175,7 +209,7 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
                  to walk one more time.  */
               free (qids);
               err = p9_rpc (P9_WALK_REQUEST,
-                            "442s", prev_fid, prev_fid, 1, part,
+                            "442s", next_fid, next_fid, 1, part,
                             "Q", &n_qids, &qids);
               if (err)
                 return err;
@@ -225,12 +259,12 @@ found:
 
           if (have_created)
             {
-              npi->io_fid = prev_fid;
-              next_fid = p9_fid_alloc ();
+              npi->io_fid = next_fid;
               free (qids);
               qids = NULL;
+              next_fid = p9_fid_alloc ();
               err = p9_rpc (P9_WALK_REQUEST,
-                            "442", prev_fid, next_fid, 0,
+                            "442", npi->io_fid, next_fid, 0,
                             "Q", &n_qids, &qids);
               if (err)
                 goto out;
