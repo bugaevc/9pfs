@@ -21,6 +21,7 @@
 
 #include "9pfs.h"
 #include "io_S.h"
+#include <hurd/fshelp.h>
 #include <errno.h>
 
 error_t
@@ -31,11 +32,22 @@ S_io_identity (struct protid *protid,
                mach_msg_type_name_t *fsys_type,
                ino64_t *fileno)
 {
-  struct node *np;
+  error_t err;
+  io_statbuf_t st;
 
   if (!protid)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EOPNOTSUPP;
+  err = S_io_stat (protid, &st);
+  if (err)
+    return err;
+  err = fshelp_get_identity (p9_bucket, st.st_ino, id);
+  if (err)
+    return err;
+
+  *id_type = MACH_MSG_TYPE_MAKE_SEND;
+  *fsys = p9_fsys_identity;
+  *fsys_type = MACH_MSG_TYPE_MAKE_SEND;
+  *fileno = st.st_ino;
+  return 0;
 }

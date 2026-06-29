@@ -34,6 +34,8 @@ struct port_class *p9_protid_class;
 struct port_bucket *p9_bucket;
 struct port_info *p9_control;
 
+mach_port_t p9_fsys_identity;
+
 void
 p9_startup (void)
 {
@@ -45,6 +47,10 @@ p9_startup (void)
   p9_control_class = ports_create_class (0, 0);
   p9_protid_class = ports_create_class (p9_release_protid, 0);
   p9_bucket = ports_create_bucket ();
+
+  err = mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
+                            &p9_fsys_identity);
+  assert_perror_backtrace (err);
 
   if (p9_settrans_path)
     {

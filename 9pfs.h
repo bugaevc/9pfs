@@ -69,6 +69,8 @@ extern struct port_class *p9_protid_class;
 extern struct port_bucket *p9_bucket;
 extern struct port_info *p9_control;
 
+extern mach_port_t p9_fsys_identity;
+
 extern const struct argp p9_runtime_argp;
 
 void p9_startup (void);
