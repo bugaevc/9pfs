@@ -105,6 +105,8 @@ S_fsys_getroot (struct port_info *control,
       goto out;
     }
 
+  po->root_qid_path = np->qid.path;
+
   /* If an open mode is requested for the very root,
      apply it now.  */
   err = p9_ensure_open (pi, flags & O_ACCMODE);

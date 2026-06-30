@@ -105,6 +105,7 @@ struct peropen
   loff_t offset;
   struct node *np;
   mach_port_t root_parent;
+  uint64_t root_qid_path;
   int user_open_flags;
 };
 
