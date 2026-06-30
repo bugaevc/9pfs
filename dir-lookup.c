@@ -224,6 +224,13 @@ creat:
       if (!*slash)
         {
 found:
+          if (must_be_dir && n_qids > 0
+              && !(qids[n_qids - 1].type & (P9_MODE_DIR >> 24)))
+            {
+              err = ENOTDIR;
+              goto out;
+            }
+
           nnp = p9_make_node ();
           if (!nnp)
             {
