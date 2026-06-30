@@ -29,6 +29,15 @@
 
 #define MAX_PARTS 16
 
+static void
+fill_retry_name (char *retry_name, const char *remaining)
+{
+  while (*remaining == '/')
+    remaining++;
+  /* TODO: buffer overflow?  */
+  strcpy (retry_name, remaining);
+}
+
 error_t
 S_dir_lookup (struct protid *pi, const char *name, int flags,
               mode_t mode, retry_type *do_retry, char *retry_name,
@@ -60,6 +69,18 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
   while (*name == '/')
     name++;
 
+  /* Immediately walking out of root?  */
+  if (pi->po->root_qid_path == pi->po->np->qid.path
+      && !strncmp (name, "..", 2)
+      && (name[2] == '/' || !name[2]))
+    {
+      *do_retry = FS_RETRY_REAUTH;
+      *result = pi->po->root_parent;
+      *result_type = MACH_MSG_TYPE_COPY_SEND;
+      fill_retry_name (retry_name, name + 2);
+      return 0;
+    }
+
   part = name;
   while (TRUE)
     {
@@ -84,6 +105,7 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
       if (n_parts == MAX_PARTS || !*slash)
         {
           boolean_t create;
+          int i;
 
           create = !*slash && (flags & O_CREAT);
           parts[n_parts] = NULL;
@@ -116,7 +138,27 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
               free (qids);
               return EIO;
             }
-          else if ((!create && n_qids < n_parts)
+          /* See if, at any point, we walked out of the root.  */
+          for (i = 0; i + 1 < n_qids; i++)
+            {
+              if (qids[i].path == pi->po->root_qid_path
+                  && !strncmp (parts[i + 1], "..", 2)
+                  && (parts[i + 1][2] == '/' || !parts[i + 1][2]))
+                {
+                  *do_retry = FS_RETRY_REAUTH;
+                  *result = pi->po->root_parent;
+                  *result_type = MACH_MSG_TYPE_COPY_SEND;
+                  fill_retry_name (retry_name, parts[i + 1] + 2);
+                  free (qids);
+                  /* If the walk fully succeeded, it created the fid,
+                     but we won't be needing it.  */
+                  if (n_qids == n_parts)
+                    p9_rpc (P9_CLUNK_REQUEST,
+                            "4", next_fid, "");
+                  return 0;
+                }
+            }
+          if ((!create && n_qids < n_parts)
                    || (n_qids + 1 < n_parts))
             {
               /* If we're missing some parts, that's an ENOENT.  For the case of
@@ -155,6 +197,9 @@ creat:
 
               if (must_be_dir)
                 /* https://lwn.net/Articles/926782 */
+                return EINVAL;
+              else if (slash == part + 2 && !memcmp (part, "..", 2))
+                /* Cannot create '..' */
                 return EINVAL;
               if (p9_readonly)
                 return EROFS;
