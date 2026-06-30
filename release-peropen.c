@@ -24,11 +24,19 @@
 void
 p9_release_peropen (struct peropen *po)
 {
+  error_t err;
+
   if (refcount_deref (&po->refcount) > 0)
     return;
 
   pthread_mutex_lock (&po->np->lock);
   p9_nput (po->np);
+
+  if (MACH_PORT_VALID (po->root_parent))
+    {
+      err = mach_port_deallocate (mach_task_self (), po->root_parent);
+      assert_perror_backtrace (err);
+    }
 
   free (po);
 }

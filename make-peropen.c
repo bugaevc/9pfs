@@ -38,5 +38,13 @@ p9_make_peropen (struct node *np, int flags,
   p9_nref (np);
   po->user_open_flags = flags;
 
+  if (context)
+    {
+      po->root_parent = context->root_parent;
+      if (MACH_PORT_VALID (po->root_parent))
+        mach_port_mod_refs (mach_task_self (), po->root_parent,
+                            MACH_PORT_RIGHT_SEND, 1);
+    }
+
   return po;
 }

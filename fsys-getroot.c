@@ -60,6 +60,14 @@ S_fsys_getroot (struct port_info *control,
       goto out;
     }
 
+  po->root_parent = dotdot;
+  if (dotdot != MACH_PORT_NULL)
+    {
+      err = mach_port_mod_refs (mach_task_self (), dotdot,
+                                MACH_PORT_RIGHT_SEND, 1);
+      assert_perror_backtrace (err);
+    }
+
   err = iohelp_create_complex_iouser (&cred, uids, nuids, gids, ngids);
   if (err)
     {

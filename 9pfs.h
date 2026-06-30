@@ -104,6 +104,7 @@ struct peropen
   refcount_t refcount;
   loff_t offset;
   struct node *np;
+  mach_port_t root_parent;
   int user_open_flags;
 };
 
