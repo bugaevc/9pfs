@@ -1,7 +1,6 @@
 9pfs is a 9P translator for GNU Hurd
 
-This is work-in-progress, but some things are already working. In
-particular, the FS is read-only for now.
+This is work-in-progress, but some things are already working.
 
 There is an old version based on libnetfs (see netfs.c), and the new one
 that implements the various RPCs directly.
