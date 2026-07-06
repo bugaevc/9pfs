@@ -76,7 +76,7 @@ S_io_write (struct protid *protid,
     return EIO;
 
   *amount = nwritten;
-  if (offset != -1)
+  if (offset == -1)
     po->offset += nwritten;
 
  out:
