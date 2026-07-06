@@ -117,8 +117,8 @@ p9_startup (void)
       assert_perror_backtrace (err);
     }
 
-    err = mach_port_deallocate (mach_task_self (), underlying);
-    assert_perror_backtrace (err);
+  err = mach_port_deallocate (mach_task_self (), underlying);
+  assert_perror_backtrace (err);
 }
 
 error_t
