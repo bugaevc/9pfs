@@ -67,6 +67,7 @@ extern uint32_t p9_max_message_size;
 extern struct port_class *p9_control_class;
 extern struct port_class *p9_protid_class;
 extern struct port_bucket *p9_bucket;
+extern struct port_bucket *p9_pager_bucket;
 extern struct port_info *p9_control;
 
 extern mach_port_t p9_fsys_identity;
@@ -93,6 +94,8 @@ struct node
   struct p9_qid qid;
   size_t max_message_size;
   char *path;
+  struct pager *pager;
+  int pager_fid;
 
   struct node *parent;
   struct node *children;

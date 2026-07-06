@@ -43,6 +43,7 @@ p9_make_node (void)
 
   /* Start with the overall limit.  */
   np->max_message_size = p9_max_message_size;
+  np->pager_fid = P9_NO_FID;
 
   return np;
 }

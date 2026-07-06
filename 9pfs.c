@@ -25,6 +25,7 @@
 #include <mach.h>
 #include <hurd/fsys.h>
 #include <hurd/ports.h>
+#include <hurd/pager.h>
 
 enum p9_version p9_version;
 uint32_t p9_max_message_size;
@@ -32,9 +33,12 @@ uint32_t p9_max_message_size;
 struct port_class *p9_control_class;
 struct port_class *p9_protid_class;
 struct port_bucket *p9_bucket;
+struct port_bucket *p9_pager_bucket;
 struct port_info *p9_control;
 
 mach_port_t p9_fsys_identity;
+
+struct pager_requests *p9_pager_requests;
 
 void
 p9_startup (void)
@@ -47,6 +51,7 @@ p9_startup (void)
   p9_control_class = ports_create_class (0, 0);
   p9_protid_class = ports_create_class (p9_release_protid, 0);
   p9_bucket = ports_create_bucket ();
+  p9_pager_bucket = ports_create_bucket ();
 
   err = mach_port_allocate (mach_task_self (), MACH_PORT_RIGHT_RECEIVE,
                             &p9_fsys_identity);
@@ -118,6 +123,9 @@ p9_startup (void)
     }
 
   err = mach_port_deallocate (mach_task_self (), underlying);
+  assert_perror_backtrace (err);
+
+  err = pager_start_workers (p9_pager_bucket, &p9_pager_requests);
   assert_perror_backtrace (err);
 }
 
