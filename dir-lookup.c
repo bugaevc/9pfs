@@ -138,7 +138,8 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
               free (qids);
               return EIO;
             }
-          /* See if, at any point, we walked out of the root.  */
+          /* See if, at any point, we walked out of the root.  It does not matter
+             whether the overall lookup succeeded or not.  */
           for (i = 0; i + 1 < n_qids; i++)
             {
               if (qids[i].path == pi->po->root_qid_path
@@ -158,14 +159,24 @@ S_dir_lookup (struct protid *pi, const char *name, int flags,
                   return 0;
                 }
             }
-          if ((!create && n_qids < n_parts)
-                   || (n_qids + 1 < n_parts))
+          if (n_qids < n_parts)
             {
-              /* If we're missing some parts, that's an ENOENT.  For the case of
-                 O_CREAT, allow missing the last part, but not any of the previous
-                 ones.  */
-              free (qids);
-              return ENOENT;
+              /* If we're missing some parts, that's an error (likely ENOENT).
+                 For the case of O_CREAT, allow missing the last part, but not
+                 any of the previous ones.  */
+              if (!(qids[n_qids - 1].type & (P9_MODE_DIR >> 24)))
+                {
+                  /* The last part that did resolve led to a non-directory.  */
+                  free (qids);
+                  return ENOTDIR;
+                }
+              /* TODO: retry the walk in two parts to get an accurate error
+                 code (perhaps EACCESS).  */
+              if (!(create && n_qids + 1 == n_parts))
+                {
+                  free (qids);
+                  return ENOENT;
+                }
             }
 
           if (n_qids == n_parts)

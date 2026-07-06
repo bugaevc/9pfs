@@ -36,7 +36,7 @@ S_io_write (struct protid *protid,
   error_t err;
   struct peropen *po;
   struct node *np;
-  loff_t start;
+  uint64_t start;
   uint32_t nwritten;
 
   if (protid == NULL)
@@ -52,21 +52,17 @@ S_io_write (struct protid *protid,
 
   pthread_mutex_lock (&np->lock);
 
-  /* Cap amount to the size we can fit in one message.  */
-  if (datalen > np->max_message_size - 24)
-    datalen = np->max_message_size - 24;
-
   err = p9_ensure_open (protid, O_WRITE);
   if (err)
     goto out;
 
-  /* Cap amount again.  */
+  /* Cap amount to the size we can fit in one message.  */
   if (datalen > np->max_message_size - 24)
     datalen = np->max_message_size - 24;
 
   /* FIXME: Respect O_APPEND.  In 9P2000.L, perhaps we can use
      the native O_APPEND flags when opening?  */
-  start = offset == -1 ? po->offset : offset;
+  start = (offset == -1) ? po->offset : offset;
 
   /* Preemptively invalidate the stat cache.  */
   np->last_stat = 0;

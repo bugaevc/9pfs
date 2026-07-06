@@ -77,7 +77,7 @@ S_io_read (struct protid *protid,
   if (nread > np->max_message_size - 24)
     nread = np->max_message_size - 24;
 
-  start = offset == -1 ? po->offset : offset;
+  start = (offset == -1) ? po->offset : offset;
 
   err = p9_rpc (P9_READ_REQUEST,
                 "484", protid->io_fid, (uint64_t) start, nread,

@@ -31,6 +31,8 @@ S_dir_link (struct protid *dir, struct protid *file,
     return EOPNOTSUPP;
   if (!file)
     return EXDEV;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
   return EROFS;
