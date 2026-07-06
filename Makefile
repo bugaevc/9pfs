@@ -18,8 +18,10 @@ $(FSYS_SRCS) main.o: fsys_S.h
 $(IO_SRCS) main.o: io_S.h
 $(FS_SRCS) main.o: fs_S.h
 
+LIBS = shouldbeinlibc ihash ports iohelp fshelp
+
 9pfs: $(SRCS)
-	$(CC) $(CFLAGS) $^ -o $@ -l shouldbeinlibc -l ihash -l ports -pthread -l iohelp -l fshelp
+	$(CC) $(CFLAGS) $^ -o $@ -pthread $(foreach LIB,$(LIBS),-l $(LIB))
 
 %Server.c %_S.h:
 	echo "#include <hurd/"$*".defs>" | $(MIG) \
