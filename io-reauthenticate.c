@@ -20,6 +20,7 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "io_S.h"
 #include <errno.h>
 #include <hurd/iohelp.h>
@@ -74,6 +75,21 @@ S_io_reauthenticate (struct protid *protid,
   assert_perror_backtrace (err2);
   err2 = mach_port_deallocate (mach_task_self (), auth);
   assert_perror_backtrace (err2);
+
+  if (!err && protid->walk_fid != P9_NO_FID)
+    {
+      uint16_t n_qids;
+      uint32_t new_fid;
+
+      /* TODO: for real multi-user mode, re-attach and walk to the path
+         that the old pi has.  */
+      new_fid = p9_fid_alloc ();
+      err = p9_rpc (P9_WALK_REQUEST,
+                    "442", protid->walk_fid, new_fid, 0,
+                    "2", &n_qids);
+      if (!err)
+        new_pi->walk_fid = new_fid;
+    }
 
   if (!err)
     {
