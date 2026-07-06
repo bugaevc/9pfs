@@ -20,17 +20,30 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "fs_S.h"
 #include <errno.h>
 
 error_t
 S_file_chmod (struct protid *pi, mode_t new_mode)
 {
+  error_t err;
+
   if (!pi)
     return EOPNOTSUPP;
   if (p9_readonly)
     return EROFS;
 
-  /* TODO */
-  return EROFS;
+  pi->po->np->last_stat = 0;
+
+  if (p9_version >= P9_VERSION_2000_L)
+    err = p9_rpc (P9_SETATTR_REQUEST,
+                  "4444488888", pi->walk_fid, P9_SETATTR_MASK_MODE,
+                  new_mode, 0, 0, 0, 0, 0, 0, 0,
+                  "");
+  else
+    /* TODO: core 9P */
+    return EOPNOTSUPP;
+
+  return err;
 }
