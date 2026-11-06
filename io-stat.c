@@ -47,10 +47,7 @@ S_io_stat (struct protid *pi, io_statbuf_t *statbuf)
 
   /* Cache stats for up to 5 seconds.  */
   if (time (NULL) <= np->last_stat + 5)
-    {
-      *statbuf = np->stat;
-      return 0;
-    }
+    goto have_stat;
 
   np->stat.st_fsid = getpid ();
   np->stat.st_fstype = FSTYPE_MISC;
@@ -203,6 +200,11 @@ S_io_stat (struct protid *pi, io_statbuf_t *statbuf)
     }
 
   np->last_stat = time (NULL);
+have_stat:
   *statbuf = np->stat;
+
+  if (pi->po->root_qid_path == np->qid.path)
+    statbuf->st_mode |= S_IROOT;
+
   return 0;
 }
