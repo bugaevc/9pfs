@@ -46,7 +46,7 @@ char *p9_aname;
 /* If not specified, allow everything.  */
 mode_t p9_mode_mask = ~0;
 int p9_dump_exchanges;
-boolean_t p9_readonly;
+boolean_t p9_readonly, p9_nosuid, p9_noexec;
 char *p9_settrans_path;
 
 static char *server_host;
@@ -64,19 +64,42 @@ static const char *const doc = "9P remote filesystem translator for the Hurd."
 " case the file will be opened, either as a socket or special file."
 "  USER defaults to the running user.";
 
+enum
+{
+  OPT_NO_SUID = -100,
+  OPT_SUID_OK,
+  OPT_NO_EXEC,
+  OPT_EXEC_OK,
+  OPT_DUMP_9P,
+  OPT_SETTRANS
+};
+
 /* Options that can be set both at startup and at runtime.  */
 static const struct argp_option common_options[] =
 {
   {"aname", 'a', "NAME", 0, "Pick remote file tree"},
   {"mask", 'm', "MASK", OPTION_ARG_OPTIONAL, "Apply MASK (default: 0755)"
                                              " to file permissions"},
-  {"readonly", 'r', 0, 0, "Disallow any modifications"},
+  {"readonly", 'r', 0, 0, "Disallow any modifications", 1},
   {"rdonly", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
   {"ro", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
-  {"writable", 'w', 0, 0, "Allow modifications (on by default)"},
+
+  {"writable", 'w', 0, 0, "Allow modifications (on by default)", 1},
   {"rdwr", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
   {"rw", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
-  {"dump-9p", 'D', 0, 0, "Dump 9P exchanges to stderr for debugging"},
+
+  {"no-exec", OPT_NO_EXEC, 0, 0, "Disallow running files", 2},
+  {"noexec", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
+  {"exec-ok", OPT_EXEC_OK, 0, 0, "Allow running files"
+                                 " (on by default)", 2},
+
+  {"no-suid", OPT_NO_SUID, 0, 0, "Disallow set-uid or set-gid execution", 2},
+  {"nosuid", 0, 0, OPTION_ALIAS | OPTION_HIDDEN},
+  {"suid-ok", OPT_SUID_OK, 0, 0, "Allow set-uid and set-gid execution"
+                                 " (on by default)", 2},
+
+
+  {"dump-9p", OPT_DUMP_9P, 0, 0, "Dump 9P exchanges to stderr for debugging", 3},
   {0, 0},
 };
 
@@ -121,7 +144,23 @@ parse_common_opt (int key, char *arg, struct argp_state *state)
       p9_readonly = FALSE;
       return 0;
 
-    case 'D':
+    case OPT_NO_SUID:
+      p9_nosuid = TRUE;
+      return 0;
+
+    case OPT_SUID_OK:
+      p9_nosuid = FALSE;
+      return 0;
+
+    case OPT_NO_EXEC:
+      p9_noexec = TRUE;
+      return 0;
+
+    case OPT_EXEC_OK:
+      p9_noexec = FALSE;
+      return 0;
+
+    case OPT_DUMP_9P:
       p9_dump_exchanges = 1;
       return 0;
 
@@ -138,8 +177,8 @@ static const struct argp_option startup_options[] =
 {
   {0, '4', 0, 0, "Connect using IPv4"},
   {0, '6', 0, 0, "Connect using IPv6"},
-  {"settrans", 'S', "PATH", 0, "Set as active translator on PATH"
-                               " (useful for debugging)"},
+  {"settrans", OPT_SETTRANS, "PATH", 0, "Set as active translator on PATH"
+                               " (useful for debugging)", 3},
   {0, 0},
 };
 
@@ -158,7 +197,7 @@ parse_startup_opt (int key, char *arg, struct argp_state *state)
       allow_ip = 6;
       return 0;
 
-    case 'S':
+    case OPT_SETTRANS:
         p9_settrans_path = arg;
         return 0;
 
