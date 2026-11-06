@@ -30,6 +30,7 @@ S_file_getlinknode (struct protid *pi, mach_port_t *linknode,
   if (!pi)
     return EOPNOTSUPP;
 
-  /* TODO */
-  return EROFS;
+  *linknode = ports_get_right (pi);
+  *linknode_type = MACH_MSG_TYPE_MAKE_SEND;
+  return 0;
 }

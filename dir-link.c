@@ -20,6 +20,7 @@
 #define _GNU_SOURCE 1
 
 #include "9pfs.h"
+#include "9p-rpc.h"
 #include "fs_S.h"
 #include <errno.h>
 
@@ -34,6 +35,15 @@ S_dir_link (struct protid *dir, struct protid *file,
   if (p9_readonly)
     return EROFS;
 
+
+  if (p9_version >= P9_VERSION_2000_L)
+    {
+      /* TODO: is there any way to honour !EXCL? */
+      return p9_rpc (P9_LINK_REQUEST,
+                     "44s", dir->walk_fid, file->walk_fid, name,
+                     "");
+    }
+
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }
