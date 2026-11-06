@@ -60,6 +60,11 @@ S_io_map (struct protid *protid,
       uint16_t n_qids;
 
       assert_backtrace (np->pager_fid == P9_NO_FID);
+      if (protid->walk_fid == P9_NO_FID)
+        {
+          pthread_mutex_unlock (&np->lock);
+          return EBADF;
+        }
       np->pager_fid = p9_fid_alloc ();
       err = p9_rpc (P9_WALK_REQUEST,
                     "442", protid->walk_fid, np->pager_fid, 0,

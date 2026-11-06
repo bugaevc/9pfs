@@ -141,7 +141,7 @@ S_io_stat (struct protid *pi, io_statbuf_t *statbuf)
           np->stat.st_ctim.tv_nsec = ctime_nsec;
         }
       else
-	memset (&np->stat.st_ctim, 0,
+        memset (&np->stat.st_ctim, 0,
                 sizeof (struct timespec));
     }
   else
