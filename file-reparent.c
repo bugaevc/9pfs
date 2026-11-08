@@ -34,5 +34,5 @@ S_file_reparent (struct protid *pi, mach_port_t parent,
     return EROFS;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

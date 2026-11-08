@@ -30,7 +30,9 @@ S_dir_mkfile (struct protid *dir, int flags,
 {
   if (!dir)
     return EOPNOTSUPP;
+  if (p9_readonly)
+    return EROFS;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

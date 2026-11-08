@@ -31,5 +31,5 @@ S_file_get_translator_cntl (struct protid *pi, mach_port_t *cntl,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

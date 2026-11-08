@@ -32,5 +32,5 @@ S_file_chauthor (struct protid *pi, uid_t new_author)
     return EROFS;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

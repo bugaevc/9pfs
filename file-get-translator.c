@@ -31,5 +31,5 @@ S_file_get_translator (struct protid *pi, char **translator,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

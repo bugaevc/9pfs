@@ -32,5 +32,5 @@ S_file_chflags (struct protid *pi, int new_flags)
     return EROFS;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

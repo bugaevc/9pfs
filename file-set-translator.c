@@ -34,5 +34,5 @@ S_file_set_translator (struct protid *pi, int passive_flags,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

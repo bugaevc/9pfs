@@ -31,5 +31,5 @@ S_file_lock_stat (struct protid *pi, int *my_status,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

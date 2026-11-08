@@ -38,5 +38,5 @@ S_file_get_storage_info (struct protid *pi, mach_port_t **ports,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

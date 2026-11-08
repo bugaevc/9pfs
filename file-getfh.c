@@ -31,5 +31,5 @@ S_file_getfh (struct protid *pi, char **fh,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

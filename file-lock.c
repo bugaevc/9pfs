@@ -30,5 +30,5 @@ S_file_lock (struct protid *pi, int flags)
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

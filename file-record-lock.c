@@ -31,5 +31,5 @@ S_file_record_lock (struct protid *pi, int cmd,
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }

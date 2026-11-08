@@ -30,5 +30,5 @@ S_dir_notice_changes (struct protid *pi, mach_port_t port)
     return EOPNOTSUPP;
 
   /* TODO */
-  return EROFS;
+  return EOPNOTSUPP;
 }
