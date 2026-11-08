@@ -28,6 +28,7 @@ error_t
 S_file_chmod (struct protid *pi, mode_t new_mode)
 {
   error_t err;
+  struct p9_stat s;
 
   if (!pi)
     return EOPNOTSUPP;
@@ -37,13 +38,16 @@ S_file_chmod (struct protid *pi, mode_t new_mode)
   pi->po->np->last_stat = 0;
 
   if (p9_version >= P9_VERSION_2000_L)
-    err = p9_rpc (P9_SETATTR_REQUEST,
-                  "4444488888", pi->walk_fid, P9_SETATTR_MASK_MODE,
-                  new_mode, 0, 0, 0, 0, 0, 0, 0,
-                  "");
-  else
-    /* TODO: core 9P */
-    return EOPNOTSUPP;
+    return p9_rpc (P9_SETATTR_REQUEST,
+                   "4444488888", pi->walk_fid, P9_SETATTR_MASK_MODE,
+                   new_mode, 0, 0, 0, 0, 0, 0, 0,
+                   "");
+
+
+  p9_stat_dont_touch (&s);
+  s.mode = mode_to_p9_mode (new_mode);
+  err = p9_wstat (pi->walk_fid, &s);
+  p9_stat_free (&s);
 
   return err;
 }
